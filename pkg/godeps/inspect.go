@@ -1,21 +1,12 @@
 package godeps
 
-import (
-	"fmt"
-	"os"
-)
-
-const (
-	InspectHookEnv = "GODEP_INSPECT_HOOK"
-)
-
-func Inspect(deps *Godeps) error {
+func Inspect(deps *Godeps, hook string) error {
 	for _, dep := range deps.Deps {
-		_, err := runHook(os.Getenv(InspectHookEnv),
+		_, err := runHook(hook,
 			[]string{
-				fmt.Sprintf("GODEP_IMPORT_PATH=%s", dep.ImportPath),
-				fmt.Sprintf("GODEP_COMMENT=%s", dep.Comment),
-				fmt.Sprintf("GODEP_REV=%s", dep.Rev),
+				"GODEP_IMPORT_PATH=" + dep.ImportPath,
+				"GODEP_COMMENT=" + dep.Comment,
+				"GODEP_REV=" + dep.Rev,
 			},
 		)
 		if err != nil {

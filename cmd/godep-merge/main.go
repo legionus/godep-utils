@@ -10,13 +10,8 @@ import (
 	"github.com/legionus/godep-utils/pkg/godeps"
 )
 
-const (
-	PreHookEnv  = "GODEP_MERGE_PRE_HOOK"
-	PostHookEnv = "GODEP_MERGE_POST_HOOK"
-	DepsHookEnv = "GODEP_MERGE_DEPS_HOOK"
-)
-
 var (
+	hooksDir  = flag.String("hooks-dir", "", "Specifies directory with hooks")
 	output    = flag.String("output", "-", "Write new Godeps to file")
 	showMerge = flag.Bool("show-merge", false, "Show only merge")
 )
@@ -35,12 +30,21 @@ func usage() {
 	fmt.Fprintf(os.Stderr, "Options:\n")
 	flag.PrintDefaults()
 	fmt.Fprintf(os.Stderr, "\n")
-	fmt.Fprintf(os.Stderr, "Use the following variables to change dependencies:\n")
-	fmt.Fprintf(os.Stderr, "   %s=<path-to-script>\n", PreHookEnv)
-	fmt.Fprintf(os.Stderr, "   %s=<path-to-script>\n", PostHookEnv)
-	fmt.Fprintf(os.Stderr, "   %s=<path-to-script>\n", DepsHookEnv)
+	fmt.Fprintf(os.Stderr, "Use the following hooks to change dependencies:\n")
+	fmt.Fprintf(os.Stderr, "   <hooks-dir>/pre.sh  -- runs before merge\n")
+	fmt.Fprintf(os.Stderr, "   <hooks-dir>/post.sh -- runs after deps merge\n")
+	fmt.Fprintf(os.Stderr, "   <hooks-dir>/dep.sh  -- runs for every dep\n")
 	fmt.Fprintf(os.Stderr, "\n")
 	os.Exit(2)
+}
+
+func isAccessable(file string) bool {
+	fd, err := os.Open(file)
+	if err != nil {
+		return false
+	}
+	fd.Close()
+	return true
 }
 
 func main() {
@@ -84,13 +88,21 @@ func main() {
 		os.Exit(0)
 	}
 
-	deps, err := godeps.Merge(diff,
-		&godeps.MergeHooks{
-			PreHook:  os.Getenv(PreHookEnv),
-			DepHook:  os.Getenv(DepsHookEnv),
-			PostHook: os.Getenv(PostHookEnv),
-		},
-	)
+	hooks := &godeps.MergeHooks{}
+
+	if *hooksDir != "" {
+		if isAccessable(*hooksDir + "/godep-merge-pre-hook") {
+			hooks.PreHook = *hooksDir + "/godep-merge-pre-hook"
+		}
+		if isAccessable(*hooksDir + "/godep-merge-post-hook") {
+			hooks.PostHook = *hooksDir + "/godep-merge-post-hook"
+		}
+		if isAccessable(*hooksDir + "/godep-merge-dep-hook") {
+			hooks.DepHook = *hooksDir + "/godep-merge-dep-hook"
+		}
+	}
+
+	deps, err := godeps.Merge(diff, hooks)
 	if err != nil {
 		log.Fatal(err)
 	}

@@ -10,7 +10,7 @@ import (
 )
 
 func usage() {
-	fmt.Fprintf(os.Stderr, "Usage: godep-inspect Godeps.json\n")
+	fmt.Fprintf(os.Stderr, "Usage: godep-inspect Godeps.json script\n")
 	fmt.Fprintf(os.Stderr, "\n")
 	flag.PrintDefaults()
 	os.Exit(2)
@@ -24,7 +24,7 @@ func main() {
 
 	args := flag.Args()
 
-	if len(args) < 1 {
+	if len(args) < 2 {
 		fmt.Fprintf(os.Stderr, "ERROR: More arguments required\n")
 		usage()
 	}
@@ -34,7 +34,7 @@ func main() {
 		log.Fatal(err)
 	}
 
-	if err := godeps.Inspect(deps); err != nil {
+	if err := godeps.Inspect(deps, args[1]); err != nil {
 		log.Fatal(err)
 	}
 }
